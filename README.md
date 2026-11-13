@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-brightgreen.svg)](plugin.json)
 [![Platform](https://img.shields.io/badge/platform-Antigravity%20Sidecar-lightgrey.svg)](#兼容性)
+[![Release](https://img.shields.io/badge/release-v1.0.0-orange.svg)](https://github.com/QingYi625/session-monitor/releases/tag/v1.0.0)
 
 一个原生 **Antigravity** 插件：通过 Sidecar 在右侧辅助面板（Auxiliary Pane）里实时展示当前对话的运行指标——轮数、步数、模型与工具耗时、首 token 平均耗时、输出速度、Token 缓存命中、上下文构成，以及上下文压缩次数。
 
@@ -82,7 +83,11 @@ cp -R ./session-monitor ~/.gemini/config/plugins/session-monitor
 └── skills/
 ```
 
-### 方式二：从仓库克隆
+### 方式二：下载 Release 包
+
+到 [Releases](https://github.com/QingYi625/session-monitor/releases) 下载最新的 `session-monitor-v1.0.0.zip`，解压后把 `session-monitor` 文件夹放到插件目录即可，不需要 Git。
+
+### 方式三：从仓库克隆
 
 ```bash
 git clone https://github.com/QingYi625/session-monitor.git \
@@ -220,6 +225,12 @@ Everything is read from the local conversation database in a read-only fashion �
 ## 更新日志
 
 见 [CHANGELOG.md](CHANGELOG.md)。
+
+## 反馈
+
+- 问题反馈：[新建 Bug 报告](https://github.com/QingYi625/session-monitor/issues/new?template=bug_report.yml)
+- 功能建议：[新建功能建议](https://github.com/QingYi625/session-monitor/issues/new?template=feature_request.yml)
+- 提交前请先看「常见问题」，并避免在截图或日志中暴露账号、API Key 等敏感信息。
 
 ## 许可证
 
