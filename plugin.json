@@ -1,0 +1,12 @@
+{
+  "name": "session-monitor",
+  "displayName": "会话统计",
+  "version": "1.0.0",
+  "description": "在右侧辅助面板实时查看当前 Antigravity 对话的轮数、步数、模型与工具用时、首 token 平均耗时、输出速度、Token 缓存命中、上下文构成与已压缩次数。",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "打开会话统计面板查看当前上下文占用与已压缩次数",
+    "查看当前对话的 Token 用量与缓存命中率",
+    "检查当前会话的模型耗时与输出速度"
+  ]
+}

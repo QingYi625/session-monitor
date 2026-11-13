@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>会话统计</title>
+  <script src="/preload.js"></script>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <!-- Top bar: conversation switcher + live indicator -->
+    <header class="topbar">
+      <div class="conv-picker-wrap">
+        <span class="live-dot" id="live-dot" title="每 1.5 秒自动同步"></span>
+        <select id="conv-select" class="conv-select" aria-label="选择会话"></select>
+      </div>
+      <span id="model-badge" class="model-badge hidden"></span>
+    </header>
+
+    <!-- Loading / Empty state -->
+    <div id="empty-state" class="empty-state">
+      <div class="empty-title" id="empty-title">正在读取当前对话统计…</div>
+      <div class="empty-sub" id="empty-sub">正在同步本地对话记录</div>
+    </div>
+
+    <!-- Main stats view -->
+    <main id="stats-main" class="main hidden">
+      <!-- Compact summary strip (mirrors Screenshot 1) -->
+      <section class="summary-strip" aria-label="实时概览">
+        <button type="button" class="summary-item" data-target="card-session" title="点击定位到会话统计">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M2.5 11.5a6.5 6.5 0 1 1 11 0" />
+            <path d="M8 8.5 10.8 5.7" />
+            <circle cx="8" cy="9" r="1" class="fill" />
+          </svg>
+          <span id="pill-session">— 轮 — 步 · — tok/s</span>
+        </button>
+
+        <button type="button" class="summary-item" data-target="card-tokens" title="点击定位到 Token 用量">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
+            <ellipse cx="8" cy="4" rx="5" ry="2" />
+            <path d="M3 4v4c0 1.1 2.24 2 5 2s5-.9 5-2V4" />
+            <path d="M3 8v4c0 1.1 2.24 2 5 2s5-.9 5-2V8" />
+          </svg>
+          <span id="pill-tokens">— tok · 缓存命中 —%</span>
+        </button>
+
+        <button type="button" class="summary-item summary-ctx" data-target="card-context" title="点击定位到上下文与已压缩次数">
+          <svg class="ring-svg" viewBox="0 0 18 18" aria-hidden="true">
+            <circle class="ring-track" cx="9" cy="9" r="6.5" />
+            <circle class="ring-fill" id="ring-fill" cx="9" cy="9" r="6.5" />
+          </svg>
+          <span id="pill-context">—%</span>
+        </button>
+      </section>
+
+      <!-- Card 1: Session Stats (mirrors Screenshot 2) -->
+      <section class="card" id="card-session">
+        <div class="card-head">
+          <div class="card-title">
+            <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M2.5 11.5a6.5 6.5 0 1 1 11 0" />
+              <path d="M8 8.5 10.8 5.7" />
+              <circle cx="8" cy="9" r="1" class="fill" />
+            </svg>
+            <span>会话统计</span>
+          </div>
+          <div class="card-head-val" id="val-turns-steps">0 轮 0 步</div>
+        </div>
+        <div class="rows">
+          <div class="row">
+            <span class="row-label">模型用时</span>
+            <span class="row-val" id="val-model-time">0秒</span>
+          </div>
+          <div class="row">
+            <span class="row-label">工具调用用时</span>
+            <span class="row-val" id="val-tool-time">0秒</span>
+          </div>
+          <div class="row">
+            <span class="row-label">首 token 平均 (TTFT)</span>
+            <span class="row-val" id="val-ttft">0.0秒</span>
+          </div>
+          <div class="row">
+            <span class="row-label">输出速度 (TPS)</span>
+            <span class="row-val" id="val-tps">0 tok/s</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 2: Context Usage + Compactions (mirrors Screenshot 3 + extra 已压缩次数) -->
+      <section class="card" id="card-context">
+        <div class="card-head">
+          <div class="card-title-muted">
+            <span>上下文已用</span>
+            <strong class="ctx-pct-strong" id="val-ctx-pct">0%</strong>
+          </div>
+          <div class="card-head-val" id="val-ctx-ratio">~0 / 256K</div>
+        </div>
+
+        <div class="ctx-bar" id="ctx-bar" title="上下文 Token 构成">
+          <div class="ctx-seg seg-sys" id="seg-sys"></div>
+          <div class="ctx-seg seg-tools" id="seg-tools"></div>
+          <div class="ctx-seg seg-msg" id="seg-msg"></div>
+          <div class="ctx-seg seg-other hidden" id="seg-other"></div>
+        </div>
+
+        <div class="rows">
+          <div class="row">
+            <span class="row-label"><span class="swatch sw-sys"></span>系统提示词</span>
+            <span class="row-val" id="val-sys-prompt">~0</span>
+          </div>
+          <div class="row">
+            <span class="row-label"><span class="swatch sw-tools"></span>工具定义</span>
+            <span class="row-val" id="val-tools">~0</span>
+          </div>
+          <div class="row">
+            <span class="row-label"><span class="swatch sw-msg"></span>对话消息</span>
+            <span class="row-val" id="val-chat-msgs">~0</span>
+          </div>
+          <div class="row hidden" id="row-other">
+            <span class="row-label"><span class="swatch sw-other"></span>其他上下文</span>
+            <span class="row-val" id="val-other">~0</span>
+          </div>
+
+          <!-- Extra requested metric: Compaction count -->
+          <div class="compaction-box" id="compaction-box">
+            <div class="row">
+              <span class="row-label compaction-label">
+                <svg class="icon icon-sm" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 4.5h10M4.5 8h7M6 11.5h4" />
+                </svg>
+                <span>已压缩次数</span>
+              </span>
+              <span class="row-val compaction-val" id="val-compactions">0 次</span>
+            </div>
+            <div class="compaction-history hidden" id="compaction-history"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 3: Token Usage (mirrors Screenshot 4) -->
+      <section class="card" id="card-tokens">
+        <div class="card-head">
+          <div class="card-title">
+            <svg class="icon" viewBox="0 0 16 16" aria-hidden="true">
+              <ellipse cx="8" cy="4" rx="5" ry="2" />
+              <path d="M3 4v4c0 1.1 2.24 2 5 2s5-.9 5-2V4" />
+              <path d="M3 8v4c0 1.1 2.24 2 5 2s5-.9 5-2V8" />
+            </svg>
+            <span>Token 用量</span>
+          </div>
+          <div class="card-head-val" id="val-total-tokens">0 tok</div>
+        </div>
+        <div class="rows">
+          <div class="row">
+            <span class="row-label">缓存命中</span>
+            <span class="row-val" id="val-cache-hit">0%</span>
+          </div>
+          <div class="row">
+            <span class="row-label">未缓存输入</span>
+            <span class="row-val" id="val-uncached-in">0 tok</span>
+          </div>
+          <div class="row">
+            <span class="row-label">缓存读取</span>
+            <span class="row-val" id="val-cache-read">0 tok</span>
+          </div>
+          <div class="row">
+            <span class="row-label">输出</span>
+            <span class="row-val" id="val-output-tokens">0 tok</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>
