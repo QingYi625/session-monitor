@@ -13,3 +13,7 @@ desktop.ini
 *.log
 .temp/
 .cache/
+
+# Scratch
+work-*.png
+

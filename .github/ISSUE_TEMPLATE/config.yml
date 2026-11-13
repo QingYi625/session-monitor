@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 安装与使用说明
+    url: https://github.com/QingYi625/session-monitor#安装
+    about: 安装路径、启用方式和常见问题
